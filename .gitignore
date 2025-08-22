@@ -37,6 +37,10 @@ env/
 ENV/
 env.bak/
 venv.bak/
+.virtualenv/
+.conda/
+conda-env/
+Pipfile.lock
 
 # IDE files
 .vscode/
