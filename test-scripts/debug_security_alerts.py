@@ -7,9 +7,11 @@ import asyncio
 import json
 import sys
 import os
+from pathlib import Path
 
-# Add the package to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to Python path to find mcp_azure_server
+parent_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(parent_dir))
 
 from mcp_azure_server.server import get_security_center_alerts
 

@@ -1,5 +1,12 @@
 import asyncio
 import os
+import sys
+from pathlib import Path
+
+# Add the parent directory to Python path to find mcp_azure_server
+parent_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(parent_dir))
+
 from mcp_azure_server.server import get_recommendations, get_subscription_details, get_cost_analysis, get_budgets, get_usage_details, get_price_sheet, get_billing_summary_resource
 
 # Create export directory

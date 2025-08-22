@@ -1,7 +1,11 @@
 import asyncio
 import os
 import sys
-sys.path.insert(0, '.')
+from pathlib import Path
+
+# Add the parent directory to Python path to find mcp_azure_server
+parent_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(parent_dir))
 
 from mcp_azure_server.server import (
     get_virtual_machines_detailed,

@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """
-Test file for Azure Billing and Cost Management tools.
+Test file for Azure Detailed Resource Information tools.
 
 Tests the following tools:
-- get_cost_analysis
-- get_budgets
-- get_u    print("This will test cost analysis, budgets, usage details, and pricing tools.\n")age_details
-- get_price_sheet
-- get_subscription_details
-- get_azure_advisor_detailed
+- get_network_security_groups_detailed
+- get_load_balancers_detailed
+- get_virtual_machines_detailed
+- get_app_services_detailed
+- get_databases_detailed
+- get_storage_accounts_detailed
+- get_key_vaults_detailed
+- get_resource_group_details
 """
 
 import asyncio
@@ -18,39 +20,43 @@ import os
 import argparse
 from pathlib import Path
 
-# Add the package to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to Python path to find mcp_azure_server
+parent_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(parent_dir))
 
 from mcp_azure_server.server import (
-    get_cost_analysis,
-    get_budgets,
-    get_usage_details,
-    get_price_sheet,
-    get_subscription_details,
-    get_azure_advisor_detailed
+    get_network_security_groups_detailed,
+    get_load_balancers_detailed,
+    get_virtual_machines_detailed,
+    get_app_services_detailed,
+    get_databases_detailed,
+    get_storage_accounts_detailed,
+    get_key_vaults_detailed,
+    get_resource_group_details
 )
 
-async def test_billing_tools(export_data=False):
-    """Test all billing and cost management related tools."""
+async def test_detailed_resource_tools(export_data=False):
+    """Test all detailed resource information tools."""
     
-    print("💰 Testing Azure Billing and Cost Management Tools")
-    print("=" * 60)
+    print("🔍 Testing Azure Detailed Resource Information Tools")
+    print("=" * 65)
     
     # Create export directory if needed
     export_dir = None
     if export_data:
-        export_dir = Path("export/billing")
+        export_dir = Path("export/detailed")
         export_dir.mkdir(parents=True, exist_ok=True)
         print(f"📁 Export directory: {export_dir}")
     
     tests = [
-        ("get_subscription_details", get_subscription_details, {}),
-        ("get_cost_analysis (MonthToDate)", get_cost_analysis, {"timeframe": "MonthToDate"}),
-        ("get_cost_analysis (with grouping)", get_cost_analysis, {"timeframe": "MonthToDate", "group_by": "ResourceGroup"}),
-        ("get_budgets", get_budgets, {}),
-        ("get_usage_details", get_usage_details, {}),
-        ("get_price_sheet", get_price_sheet, {}),
-        ("get_azure_advisor_detailed", get_azure_advisor_detailed, {}),
+        ("get_resource_group_details", get_resource_group_details, {}),
+        ("get_virtual_machines_detailed", get_virtual_machines_detailed, {}),
+        ("get_app_services_detailed", get_app_services_detailed, {}),
+        ("get_databases_detailed", get_databases_detailed, {}),
+        ("get_storage_accounts_detailed", get_storage_accounts_detailed, {}),
+        ("get_key_vaults_detailed", get_key_vaults_detailed, {}),
+        ("get_network_security_groups_detailed", get_network_security_groups_detailed, {}),
+        ("get_load_balancers_detailed", get_load_balancers_detailed, {}),
     ]
     
     results = {}
@@ -88,23 +94,15 @@ async def test_billing_tools(export_data=False):
                 # Show summary of data received
                 if isinstance(parsed_result, dict):
                     if "data" in parsed_result and "rows" in parsed_result["data"]:
-                        cost_count = len(parsed_result["data"]["rows"])
-                        print(f"   � Found {cost_count} billing records")
+                        resource_count = len(parsed_result["data"]["rows"])
+                        print(f"   � Found {resource_count} detailed resources")
                     elif "value" in parsed_result:
-                        print(f"   💰 Found {len(parsed_result['value'])} billing items")
+                        print(f"   � Found {len(parsed_result['value'])} detailed items")
                         
-                        # Show specific insights for different tools
-                        if test_name == "get_budgets":
-                            budgets = parsed_result["value"]
-                            active_budgets = sum(1 for budget in budgets if budget.get("properties", {}).get("amount", 0) > 0)
-                            if active_budgets > 0:
-                                print(f"   📊 Found {active_budgets} active budgets")
-                        
-                        elif test_name == "get_azure_advisor_detailed":
-                            recommendations = parsed_result["value"]
-                            cost_recommendations = sum(1 for rec in recommendations if rec.get("properties", {}).get("category") == "Cost")
-                            if cost_recommendations > 0:
-                                print(f"   💡 Found {cost_recommendations} cost optimization recommendations")
+                        # Show specific details for resource groups
+                        if test_name == "get_resource_group_details":
+                            rg_names = [rg.get('name', 'Unknown') for rg in parsed_result['value'][:3]]
+                            print(f"   � Resource Groups: {', '.join(rg_names)}...")
                 
         except json.JSONDecodeError as e:
             print(f"❌ {test_name} failed: Invalid JSON response - {str(e)}")
@@ -114,8 +112,8 @@ async def test_billing_tools(export_data=False):
             results[test_name] = "EXCEPTION"
     
     # Summary
-    print(f"\n📋 Billing Tools Test Summary")
-    print("=" * 40)
+    print(f"\n📋 Detailed Resource Information Test Summary")
+    print("=" * 50)
     
     passed = sum(1 for status in results.values() if status == "PASSED")
     total = len(results)
@@ -132,27 +130,27 @@ async def test_billing_tools(export_data=False):
             print(f"   📄 {filepath}")
     
     if passed == total:
-        print("🎉 All billing tools are working correctly!")
+        print("🎉 All detailed resource tools are working correctly!")
     else:
-        print("⚠️  Some billing tools need attention.")
+        print("⚠️  Some detailed resource tools need attention.")
     
     return results
 
 if __name__ == "__main__":
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Test Azure Billing and Cost Management Tools")
+    parser = argparse.ArgumentParser(description="Test Azure Detailed Resource Information Tools")
     parser.add_argument("--export", action="store_true", help="Export test results to files")
     args = parser.parse_args()
     
-    print("Starting Azure Billing Tools Test Suite...")
+    print("Starting Azure Detailed Resource Information Test Suite...")
     if args.export:
-        print("Export mode: ON - Results will be saved to export/billing/")
+        print("Export mode: ON - Results will be saved to export/detailed/")
     else:
         print("Export mode: OFF - Use --export to save results to files")
-    print("This will test cost analysis, budgets, usage details, and pricing tools.\n")
+    print("This will test detailed queries for VMs, databases, storage, networking, etc.\n")
     
     try:
-        results = asyncio.run(test_billing_tools(export_data=args.export))
+        results = asyncio.run(test_detailed_resource_tools(export_data=args.export))
         
         # Exit with appropriate code
         passed = sum(1 for status in results.values() if status == "PASSED")
