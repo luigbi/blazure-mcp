@@ -3,11 +3,11 @@
 import sys
 from . import server
 
-__version__ = "0.0.4"
+__version__ = "0.1.0"
 
 def main():
     """Main entry point for the package."""
-    print("Starting Azure Billing MCP server...", file=sys.stderr)
+    print("Starting BLAzure MCP server...", file=sys.stderr)
     server.mcp.run()
 
 if __name__ == "__main__":

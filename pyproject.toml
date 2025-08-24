@@ -1,6 +1,6 @@
 [project]
-name = "mcp-azure-server"
-version = "0.0.3"
+name = "mcp-blazure-server"
+version = "0.1.0"
 description = "MCP server for Azure Server integration"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -11,12 +11,12 @@ dependencies = [
 ]
 
 [project.scripts]
-mcp-azure-server = "mcp_azure_server.__init__:main"
+mcp-blazure-server = "mcp_azure_server.__init__:main"
 
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project.urls]
-"Homepage" = "https://github.com/yourusername/mcp-azure-server"
-"Bug Tracker" = "https://github.com/yourusername/mcp-azure-server/issues"
+"Homepage" = "https://github.com/luigbi/blazure-mcp"
+"Bug Tracker" = "https://github.com/luigbi/blazure-mcp/issues"

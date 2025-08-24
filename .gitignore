@@ -82,3 +82,7 @@ export/
 # Temporary files
 *.tmp
 *.temp
+
+SECURITY_FEATURES.md
+PERFORMANCE_FEATURES.md
+CLAUDE.md

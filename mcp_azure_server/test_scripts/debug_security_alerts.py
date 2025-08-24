@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 
 # Add the parent directory to Python path to find mcp_azure_server
-parent_dir = Path(__file__).parent.parent
+parent_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(parent_dir))
 
 from mcp_azure_server.server import get_security_center_alerts
