@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Test file for Azure Billing and Cost Management tools.
+Test file for Azure Alerts and Monitoring tools.
 
 Tests the following tools:
-- get_cost_analysis
-- get_budgets
-- get_u    print("This will test cost analysis, budgets, usage details, and pricing tools.\n")age_details
-- get_price_sheet
-- get_subscription_details
-- get_azure_advisor_detailed
+- get_alerts_overview
+- get_alert_rules
+- get_alert_details
+- get_application_insights_data
+- get_resource_health_status
+- get_log_analytics_data
 """
 
 import asyncio
@@ -23,42 +23,40 @@ parent_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(parent_dir))
 
 from mcp_azure_server.server import (
-    get_cost_analysis,
-    get_budgets,
-    get_usage_details,
-    get_price_sheet,
-    get_subscription_details,
-    get_azure_advisor_detailed
+    get_alerts_overview,
+    get_alert_rules,
+    get_alert_details,
+    get_application_insights_data,
+    get_resource_health_status,
+    get_log_analytics_data
 )
 
-async def test_tools(export_data=False):
-    """Test all billing and cost management related tools."""
+async def test_alerts_monitoring_tools(export_data=False):
+    """Test all alerts and monitoring tools."""
     
-    print("💰 Testing Azure Billing and Cost Management Tools")
+    print("🚨 Testing Azure Alerts and Monitoring Tools")
     print("=" * 60)
     
     # Create export directory if needed
     export_dir = None
     if export_data:
-        export_dir = Path("export/billing")
+        export_dir = Path("export/alerts_monitoring")
         export_dir.mkdir(parents=True, exist_ok=True)
         print(f"📁 Export directory: {export_dir}")
     
     tests = [
-        ("get_subscription_details", get_subscription_details, {}),
-        ("get_cost_analysis (MonthToDate)", get_cost_analysis, {"timeframe": "MonthToDate"}),
-        ("get_cost_analysis (with grouping)", get_cost_analysis, {"timeframe": "MonthToDate", "group_by": "ResourceGroup"}),
-        ("get_budgets", get_budgets, {}),
-        ("get_usage_details", get_usage_details, {}),
-        ("get_price_sheet", get_price_sheet, {}),
-        ("get_azure_advisor_detailed", get_azure_advisor_detailed, {}),
+        ("get_alerts_overview", get_alerts_overview, {}),
+        ("get_alert_rules", get_alert_rules, {}),
+        ("get_application_insights_data", get_application_insights_data, {}),
+        ("get_resource_health_status", get_resource_health_status, {}),
+        ("get_log_analytics_data", get_log_analytics_data, {}),
     ]
     
     results = {}
     exported_files = []
     
     for test_name, tool_func, params in tests:
-        print(f"\n� Testing {test_name}...")
+        print(f"\n🔍 Testing {test_name}...")
         
         try:
             if params:
@@ -88,24 +86,10 @@ async def test_tools(export_data=False):
                 
                 # Show summary of data received
                 if isinstance(parsed_result, dict):
-                    if "data" in parsed_result and "rows" in parsed_result["data"]:
-                        cost_count = len(parsed_result["data"]["rows"])
-                        print(f"   � Found {cost_count} billing records")
-                    elif "value" in parsed_result:
-                        print(f"   💰 Found {len(parsed_result['value'])} billing items")
-                        
-                        # Show specific insights for different tools
-                        if test_name == "get_budgets":
-                            budgets = parsed_result["value"]
-                            active_budgets = sum(1 for budget in budgets if budget.get("properties", {}).get("amount", 0) > 0)
-                            if active_budgets > 0:
-                                print(f"   📊 Found {active_budgets} active budgets")
-                        
-                        elif test_name == "get_azure_advisor_detailed":
-                            recommendations = parsed_result["value"]
-                            cost_recommendations = sum(1 for rec in recommendations if rec.get("properties", {}).get("category") == "Cost")
-                            if cost_recommendations > 0:
-                                print(f"   💡 Found {cost_recommendations} cost optimization recommendations")
+                    if "value" in parsed_result:
+                        print(f"   📊 Found {len(parsed_result['value'])} items")
+                    elif "data" in parsed_result and "rows" in parsed_result["data"]:
+                        print(f"   📊 Found {len(parsed_result['data']['rows'])} items")
                 
         except json.JSONDecodeError as e:
             print(f"❌ {test_name} failed: Invalid JSON response - {str(e)}")
@@ -115,8 +99,8 @@ async def test_tools(export_data=False):
             results[test_name] = "EXCEPTION"
     
     # Summary
-    print(f"\n📋 Billing Tools Test Summary")
-    print("=" * 40)
+    print(f"\n📋 Alerts and Monitoring Test Summary")
+    print("=" * 45)
     
     passed = sum(1 for status in results.values() if status == "PASSED")
     total = len(results)
@@ -133,27 +117,29 @@ async def test_tools(export_data=False):
             print(f"   📄 {filepath}")
     
     if passed == total:
-        print("🎉 All billing tools are working correctly!")
+        print("🎉 All alerts and monitoring tools are working correctly!")
+        print("🚨 Your Azure monitoring and alerting is operational.")
     else:
-        print("⚠️  Some billing tools need attention.")
+        print("⚠️  Some alerts and monitoring tools need attention.")
+        print("🚨 This could impact your ability to monitor system health.")
     
     return results
 
 if __name__ == "__main__":
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Test Azure Billing and Cost Management Tools")
+    parser = argparse.ArgumentParser(description="Test Azure Alerts and Monitoring Tools")
     parser.add_argument("--export", action="store_true", help="Export test results to files")
     args = parser.parse_args()
     
-    print("Starting Azure Billing Tools Test Suite...")
+    print("Starting Azure Alerts and Monitoring Test Suite...")
     if args.export:
-        print("Export mode: ON - Results will be saved to export/billing/")
+        print("Export mode: ON - Results will be saved to export/alerts_monitoring/")
     else:
         print("Export mode: OFF - Use --export to save results to files")
-    print("This will test cost analysis, budgets, usage details, and pricing tools.\n")
+    print("This will test alert management, monitoring, and performance tracking tools.\n")
     
     try:
-        results = asyncio.run(test_tools(export_data=args.export))
+        results = asyncio.run(test_alerts_monitoring_tools(export_data=args.export))
         
         # Exit with appropriate code
         passed = sum(1 for status in results.values() if status == "PASSED")

@@ -45,20 +45,20 @@ To use this MCP server, you'll need to set up an Azure service principal with pe
 
 3. **Required Credentials**:
    
-   - **AZURE_BILLING_TENANT_ID**: Your Azure AD tenant ID
-   - **AZURE_BILLING_CLIENT_ID**: The application (client) ID of your service principal
-   - **AZURE_BILLING_CLIENT_SECRET**: The client secret value
-   - **AZURE_BILLING_SUBSCRIPTION_ID**: Your Azure subscription ID
+   - **AZURE_TENANT_ID**: Your Azure AD tenant ID
+   - **AZURE_CLIENT_ID**: The application (client) ID of your service principal
+   - **AZURE_CLIENT_SECRET**: The client secret value
+   - **AZURE_SUBSCRIPTION_ID**: Your Azure subscription ID
 
 ## Configuration
 
 Set the following environment variables:
 
 ```bash
-export AZURE_BILLING_TENANT_ID="your_tenant_id"
-export AZURE_BILLING_CLIENT_ID="your_client_id"
-export AZURE_BILLING_CLIENT_SECRET="your_client_secret" 
-export AZURE_BILLING_SUBSCRIPTION_ID="your_subscription_id"
+export AZURE_TENANT_ID="your_tenant_id"
+export AZURE_CLIENT_ID="your_client_id"
+export AZURE_CLIENT_SECRET="your_client_secret" 
+export AZURE_SUBSCRIPTION_ID="your_subscription_id"
 ```
 
 ## Usage
@@ -80,10 +80,10 @@ Add the following to your `claude_desktop_config.json` file:
     "mcp-azure-billing"
   ],
   "env": {
-    "AZURE_BILLING_TENANT_ID": "your_tenant_id",
-    "AZURE_BILLING_CLIENT_ID": "your_client_id",
-    "AZURE_BILLING_CLIENT_SECRET": "your_client_secret",
-    "AZURE_BILLING_SUBSCRIPTION_ID": "your_subscription_id"
+    "AZURE_TENANT_ID": "your_tenant_id",
+    "AZURE_CLIENT_ID": "your_client_id",
+    "AZURE_CLIENT_SECRET": "your_client_secret",
+    "AZURE_SUBSCRIPTION_ID": "your_subscription_id"
   }
 }
 ```
@@ -100,9 +100,9 @@ Replace the environment variables with your actual Azure credentials.
 
 ## Available Resources
 
-* **azure_billing://subscription**: Details about the current Azure subscription
-* **azure_billing://billing-summary**: Summary of current billing for the subscription
-* **azure_billing://budgets**: Information about all configured budgets
+* **azure://subscription**: Details about the current Azure subscription
+* **azure://billing-summary**: Summary of current billing for the subscription
+* **azure://budgets**: Information about all configured budgets
 
 ## Available Prompts
 

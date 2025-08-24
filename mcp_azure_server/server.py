@@ -15,14 +15,14 @@ load_dotenv()
 mcp = FastMCP("Azure Billing MCP")
 
 # Environment variables for Azure Billing configuration
-AZURE_BILLING_TENANT_ID = os.environ.get("AZURE_BILLING_TENANT_ID")
-AZURE_BILLING_CLIENT_ID = os.environ.get("AZURE_BILLING_CLIENT_ID")
-AZURE_BILLING_CLIENT_SECRET = os.environ.get("AZURE_BILLING_CLIENT_SECRET")
-AZURE_BILLING_SUBSCRIPTION_ID = os.environ.get("AZURE_BILLING_SUBSCRIPTION_ID")
+AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID")
+AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
+AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
+AZURE_SUBSCRIPTION_ID = os.environ.get("AZURE_SUBSCRIPTION_ID")
 
 # Check if environment variables are set
-if not all([AZURE_BILLING_TENANT_ID, AZURE_BILLING_CLIENT_ID, AZURE_BILLING_CLIENT_SECRET, AZURE_BILLING_SUBSCRIPTION_ID]):
-    print("Warning: Azure Billing environment variables not fully configured. Set AZURE_BILLING_TENANT_ID, AZURE_BILLING_CLIENT_ID, AZURE_BILLING_CLIENT_SECRET, and AZURE_BILLING_SUBSCRIPTION_ID.", file=sys.stderr)
+if not all([AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_SUBSCRIPTION_ID]):
+    print("Warning: Azure environment variables not fully configured. Set AZURE_TENANT_ID, AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, and AZURE_SUBSCRIPTION_ID.", file=sys.stderr)
 
 # Base URLs
 AZURE_MANAGEMENT_URL = "https://management.azure.com"
@@ -31,11 +31,11 @@ AZURE_LOGIN_URL = "https://login.microsoftonline.com"
 # Helper function to get Azure access token
 async def get_azure_token() -> str:
     """Get Azure AD access token for API authentication."""
-    url = f"{AZURE_LOGIN_URL}/{AZURE_BILLING_TENANT_ID}/oauth2/token"
+    url = f"{AZURE_LOGIN_URL}/{AZURE_TENANT_ID}/oauth2/token"
     data = {
         "grant_type": "client_credentials",
-        "client_id": AZURE_BILLING_CLIENT_ID,
-        "client_secret": AZURE_BILLING_CLIENT_SECRET,
+        "client_id": AZURE_CLIENT_ID,
+        "client_secret": AZURE_CLIENT_SECRET,
         "resource": "https://management.azure.com/"
     }
     
@@ -48,9 +48,9 @@ async def get_azure_token() -> str:
         return response.json().get("access_token")
 
 # Helper function for API requests
-async def make_azure_billing_request(method: str, endpoint: str, params: Dict = None, data: Dict = None) -> Dict:
+async def make_azure_request(method: str, endpoint: str, params: Dict = None, data: Dict = None) -> Dict:
     """
-    Make a request to the Azure Billing API.
+    Make a request to the Azure API.
     
     Args:
         method: HTTP method (GET, POST, PUT, DELETE)
@@ -59,7 +59,7 @@ async def make_azure_billing_request(method: str, endpoint: str, params: Dict = 
         data: Data to send (for POST/PUT)
     
     Returns:
-        Response from Azure Billing API as dictionary
+        Response from Azure API as dictionary
     """
     token = await get_azure_token()
     if not token:
@@ -108,7 +108,7 @@ async def get_cost_analysis(timeframe: str = "MonthToDate", granularity: str = "
         granularity: The granularity of data (Daily, Monthly, None)
         group_by: Optional property to group the results by (ResourceGroup, ResourceId, etc.)
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.CostManagement/query"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CostManagement/query"
     
     # Prepare the query
     query_data = {
@@ -150,7 +150,7 @@ async def get_cost_analysis(timeframe: str = "MonthToDate", granularity: str = "
             }
         ]
     
-    result = await make_azure_billing_request("POST", endpoint, 
+    result = await make_azure_request("POST", endpoint, 
                                              params={"api-version": "2023-03-01"}, 
                                              data=query_data)
     
@@ -165,10 +165,10 @@ async def get_budgets() -> str:
     """
     Get all budgets for the subscription.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/budgets"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/budgets"
     
     # Use a supported API version, e.g., 2023-05-01
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={"api-version": "2023-05-01"})
         
     if "error" in result and result["error"]:
@@ -182,10 +182,10 @@ async def get_recommendations() -> str:
     """
     Get top 10 recommendations for the subscription.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Advisor/recommendations"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Advisor/recommendations"
     
     # Use a supported API version, e.g., 2023-05-01
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2025-05-01-preview",
                                                  "$top": "10"
@@ -217,9 +217,9 @@ async def get_usage_details(start_date: str = None, end_date: str = None) -> str
     # Filter is required for usage details
     filter_param = f"properties/usageStart ge '{start_date}' and properties/usageEnd le '{end_date}'"
     
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/usageDetails"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/usageDetails"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2024-08-01",
                                                  "$filter": filter_param
@@ -235,9 +235,9 @@ async def get_subscription_details() -> str:
     """
     Get details about the current subscription.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={"api-version": "2022-12-01"})
     
     if "error" in result and result["error"]:
@@ -250,10 +250,10 @@ async def get_price_sheet() -> str:
     """
     Get the price sheet for the subscription.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/pricesheets/default"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/pricesheets/default"
     
       # Use a supported API version, e.g., 2023-05-01
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={"api-version": "2023-05-01"})
     
     if "error" in result and result["error"]:
@@ -279,11 +279,11 @@ async def get_all_resources(query: str = None) -> str:
     """
     
     query_data = {
-        "subscriptions": [AZURE_BILLING_SUBSCRIPTION_ID],
+        "subscriptions": [AZURE_SUBSCRIPTION_ID],
         "query": query or default_query
     }
     
-    result = await make_azure_billing_request("POST", endpoint, 
+    result = await make_azure_request("POST", endpoint, 
                                              params={"api-version": "2021-03-01"}, 
                                              data=query_data)
     
@@ -444,7 +444,7 @@ async def export_resources_graphml(include_network: bool = True, include_depende
             "nodes": [],
             "edges": [],
             "metadata": {
-                "subscription_id": AZURE_BILLING_SUBSCRIPTION_ID,
+                "subscription_id": AZURE_SUBSCRIPTION_ID,
                 "generated_at": datetime.now().isoformat(),
                 "include_network": include_network,
                 "include_dependencies": include_dependencies
@@ -494,12 +494,12 @@ async def get_resource_detailed_info(resource_id: str = None) -> str:
     if resource_id:
         # Get specific resource details
         endpoint = f"{resource_id}"
-        result = await make_azure_billing_request("GET", endpoint, 
+        result = await make_azure_request("GET", endpoint, 
                                                  params={"api-version": "2022-09-01"})
     else:
         # Get all resources with detailed information using ARM API
-        endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/resources"
-        result = await make_azure_billing_request("GET", endpoint, 
+        endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/resources"
+        result = await make_azure_request("GET", endpoint, 
                                                  params={
                                                      "api-version": "2022-09-01",
                                                      "$expand": "createdTime,changedTime,provisioningState"
@@ -651,9 +651,9 @@ async def get_resource_group_details() -> str:
     """
     Get detailed information about all resource groups including tags and policies.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/resourcegroups"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/resourcegroups"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2022-09-01",
                                                  "$expand": "tags"
@@ -689,14 +689,14 @@ async def get_network_watchers_topology() -> str:
             nw_rg = nw_info[2]    # resource group
             
             # Get topology from Network Watcher
-            endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/resourceGroups/{nw_rg}/providers/Microsoft.Network/networkWatchers/{nw_name}/topology"
+            endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/resourceGroups/{nw_rg}/providers/Microsoft.Network/networkWatchers/{nw_name}/topology"
             
             # Request body for topology query
             topology_request = {
                 "targetResourceGroupName": nw_rg
             }
             
-            result = await make_azure_billing_request("POST", endpoint, 
+            result = await make_azure_request("POST", endpoint, 
                                                      params={"api-version": "2023-02-01"}, 
                                                      data=topology_request)
             
@@ -733,9 +733,9 @@ async def get_resource_locks() -> str:
     """
     Get resource locks to understand governance and protection policies.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/locks"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/locks"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={"api-version": "2020-05-01"})
     
     if "error" in result and result["error"]:
@@ -748,9 +748,9 @@ async def get_rbac_assignments() -> str:
     """
     Get RBAC role assignments to understand access patterns and security relationships.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleAssignments"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Authorization/roleAssignments"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2022-04-01",
                                                  "$filter": "atScope()"
@@ -802,7 +802,7 @@ async def get_comprehensive_architecture_data() -> str:
     try:
         architecture_data = {
             "metadata": {
-                "subscription_id": AZURE_BILLING_SUBSCRIPTION_ID,
+                "subscription_id": AZURE_SUBSCRIPTION_ID,
                 "generated_at": datetime.now().isoformat(),
                 "data_scope": "comprehensive_architecture"
             },
@@ -897,7 +897,7 @@ async def get_comprehensive_architecture_data() -> str:
             "error": True,
             "message": f"Error getting comprehensive architecture data: {str(e)}",
             "type": type(e).__name__,
-            "subscription_id": AZURE_BILLING_SUBSCRIPTION_ID
+            "subscription_id": AZURE_SUBSCRIPTION_ID
         }
         return json.dumps(error_details, indent=2)
 
@@ -906,9 +906,9 @@ async def get_azure_advisor_detailed() -> str:
     """
     Get detailed Azure Advisor recommendations including cost, performance, security, and operational excellence.
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Advisor/recommendations"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Advisor/recommendations"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2020-01-01",
                                                  "$filter": "Category eq 'Cost' or Category eq 'Performance' or Category eq 'HighAvailability' or Category eq 'Security' or Category eq 'OperationalExcellence'"
@@ -972,7 +972,7 @@ async def get_vm_performance_metrics(vm_resource_id: str = None, timespan: str =
         # Get metrics for specific VM
         endpoint = f"{vm_resource_id}/providers/Microsoft.Insights/metrics"
         
-        result = await make_azure_billing_request("GET", endpoint, 
+        result = await make_azure_request("GET", endpoint, 
                                                  params={
                                                      "api-version": "2018-01-01",
                                                      "metricnames": "Percentage CPU,Available Memory Bytes,Disk Read Bytes/sec,Disk Write Bytes/sec,Network In Total,Network Out Total",
@@ -1012,7 +1012,7 @@ async def get_vm_performance_metrics(vm_resource_id: str = None, timespan: str =
                     # Get metrics for each VM
                     endpoint = f"{vm_id}/providers/Microsoft.Insights/metrics"
                     
-                    vm_metrics = await make_azure_billing_request("GET", endpoint, 
+                    vm_metrics = await make_azure_request("GET", endpoint, 
                                                                  params={
                                                                      "api-version": "2018-01-01",
                                                                      "metricnames": "Percentage CPU",
@@ -1079,7 +1079,7 @@ async def get_storage_performance_metrics(storage_account_id: str = None, timesp
                     
                     endpoint = f"{storage_id}/providers/Microsoft.Insights/metrics"
                     
-                    storage_metrics = await make_azure_billing_request("GET", endpoint, 
+                    storage_metrics = await make_azure_request("GET", endpoint, 
                                                                       params={
                                                                           "api-version": "2018-01-01",
                                                                           "metricnames": "Transactions,UsedCapacity,Availability",
@@ -1102,7 +1102,7 @@ async def get_storage_performance_metrics(storage_account_id: str = None, timesp
             return f"Error processing storage metrics: {str(e)}"
     
     # Single storage account metrics
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2018-01-01",
                                                  "metricnames": "Transactions,UsedCapacity,Availability,SuccessServerLatency,SuccessE2ELatency",
@@ -1161,7 +1161,7 @@ async def get_database_performance_metrics(database_id: str = None, timespan: st
                     else:  # Cosmos DB
                         metric_names = "TotalRequestUnits,ProvisionedThroughput,DocumentCount,DataUsage"
                     
-                    db_metrics = await make_azure_billing_request("GET", endpoint, 
+                    db_metrics = await make_azure_request("GET", endpoint, 
                                                                  params={
                                                                      "api-version": "2018-01-01",
                                                                      "metricnames": metric_names,
@@ -1187,7 +1187,7 @@ async def get_database_performance_metrics(database_id: str = None, timespan: st
     # Single database metrics
     endpoint = f"{database_id}/providers/Microsoft.Insights/metrics"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2018-01-01",
                                                  "metricnames": "cpu_percent,dtu_consumption_percent,connection_successful,storage_percent,blocked_by_firewall",
@@ -1209,7 +1209,7 @@ async def get_activity_log_analysis(hours_back: int = 168) -> str:
     Args:
         hours_back: Number of hours to look back (default: 168 = 7 days)
     """
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Insights/eventtypes/management/values"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Insights/eventtypes/management/values"
     
     # Calculate time range
     end_time = datetime.now()
@@ -1217,7 +1217,7 @@ async def get_activity_log_analysis(hours_back: int = 168) -> str:
     
     filter_query = f"eventTimestamp ge '{start_time.strftime('%Y-%m-%dT%H:%M:%SZ')}' and eventTimestamp le '{end_time.strftime('%Y-%m-%dT%H:%M:%SZ')}'"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={
                                                  "api-version": "2015-04-01",
                                                  "$filter": filter_query,
@@ -1285,7 +1285,7 @@ async def get_resource_utilization_summary() -> str:
     try:
         utilization_summary = {
             "metadata": {
-                "subscription_id": AZURE_BILLING_SUBSCRIPTION_ID,
+                "subscription_id": AZURE_SUBSCRIPTION_ID,
                 "generated_at": datetime.now().isoformat(),
                 "analysis_scope": "resource_utilization"
             },
@@ -1336,14 +1336,404 @@ async def get_resource_utilization_summary() -> str:
         }
         return json.dumps(error_details, indent=2)
 
+@mcp.tool()
+async def get_alerts_overview() -> str:
+    """
+    Get active alerts from Azure Alerts Management across all subscriptions.
+    """
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.AlertsManagement/alerts"
+    
+    result = await make_azure_request("GET", endpoint, 
+                                             params={
+                                                 "api-version": "2019-05-05-preview",
+                                                 "alertState": "New,Acknowledged"
+                                             })
+    
+    if "error" in result and result["error"]:
+        return f"Error retrieving alerts overview: {result.get('message', 'Unknown error')}"
+    
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+async def get_alert_rules() -> str:
+    """
+    Get metric alert rules and their configurations.
+    """
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Insights/metricAlerts"
+    
+    result = await make_azure_request("GET", endpoint, 
+                                             params={"api-version": "2018-03-01"})
+    
+    if "error" in result and result["error"]:
+        return f"Error retrieving alert rules: {result.get('message', 'Unknown error')}"
+    
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+async def get_alert_details(alert_id: str) -> str:
+    """
+    Get detailed alert information including remediation steps.
+    
+    Args:
+        alert_id: The alert ID to get details for
+    """
+    # Try Security Center alert first
+    sec_endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Security/alerts/{alert_id}"
+    sec_result = await make_azure_request("GET", sec_endpoint, 
+                                                  params={"api-version": "2022-01-01"})
+    
+    if not (isinstance(sec_result, dict) and sec_result.get("error")):
+        # Extract remediation steps
+        remediation = sec_result.get("properties", {}).get("remediationSteps", [])
+        return json.dumps({
+            "alert": sec_result,
+            "remediation_steps": remediation,
+            "alert_type": "security"
+        }, indent=2)
+    
+    # Fallback to AlertsManagement
+    am_endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.AlertsManagement/alerts/{alert_id}"
+    am_result = await make_azure_request("GET", am_endpoint, 
+                                                 params={"api-version": "2019-05-05-preview"})
+    
+    if "error" in am_result and am_result["error"]:
+        return f"Error retrieving alert details: {am_result.get('message', 'Unknown error')}"
+    
+    return json.dumps({
+        "alert": am_result,
+        "alert_type": "metric"
+    }, indent=2)
+
+@mcp.tool()
+async def get_application_insights_data(app_insights_id: str = None, timespan: str = "PT24H") -> str:
+    """
+    Get Application Insights telemetry and performance data.
+    
+    Args:
+        app_insights_id: Application Insights resource ID
+        timespan: Time span for data retrieval
+    """
+    if not app_insights_id:
+        # Get all Application Insights resources
+        ai_query = """
+        Resources
+        | where type =~ 'Microsoft.Insights/components'
+        | project id, name, resourceGroup, location, instrumentationKey = properties.InstrumentationKey
+        | limit 10
+        """
+        
+        ai_result = await get_all_resources(ai_query)
+        
+        try:
+            ai_data = json.loads(ai_result)
+            
+            if "data" in ai_data and "rows" in ai_data["data"] and len(ai_data["data"]["rows"]) > 0:
+                # Use first Application Insights resource
+                app_insights_id = ai_data["data"]["rows"][0][0]
+            else:
+                return json.dumps({"error": "No Application Insights resources found"}, indent=2)
+                
+        except Exception as e:
+            return f"Error processing Application Insights resources: {str(e)}"
+    
+    # Query Application Insights for performance data
+    endpoint = f"{app_insights_id}/providers/Microsoft.Insights/metrics"
+    
+    result = await make_azure_request("GET", endpoint, 
+                                             params={
+                                                 "api-version": "2018-01-01",
+                                                 "metricnames": "requests/count,requests/duration,requests/failed,exceptions/count,pageViews/count",
+                                                 "timespan": timespan,
+                                                 "interval": "PT1H",
+                                                 "aggregation": "Count,Average,Total"
+                                             })
+    
+    if "error" in result and result["error"]:
+        return f"Error retrieving Application Insights data: {result.get('message', 'Unknown error')}"
+    
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+async def get_resource_health_status() -> str:
+    """
+    Get resource health status across the subscription.
+    """
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.ResourceHealth/availabilityStatuses"
+    
+    result = await make_azure_request("GET", endpoint, 
+                                             params={
+                                                 "api-version": "2020-05-01",
+                                                 "$filter": "Properties/AvailabilityState ne 'Available'"
+                                             })
+    
+    if "error" in result and result["error"]:
+        return f"Error retrieving resource health status: {result.get('message', 'Unknown error')}"
+    
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+async def get_log_analytics_data(workspace_id: str = None, query: str = None, timespan: str = "PT24H") -> str:
+    """
+    Query Log Analytics workspace for performance and diagnostic data.
+    
+    Args:
+        workspace_id: Log Analytics workspace resource ID
+        query: KQL query to execute
+        timespan: Time span for the query
+    """
+    if not workspace_id:
+        # Find Log Analytics workspaces
+        la_query = """
+        Resources
+        | where type =~ 'Microsoft.OperationalInsights/workspaces'
+        | project id, name, resourceGroup, location, customerId = properties.customerId
+        | limit 5
+        """
+        
+        la_result = await get_all_resources(la_query)
+        
+        try:
+            la_data = json.loads(la_result)
+            
+            if "data" in la_data and "rows" in la_data["data"] and len(la_data["data"]["rows"]) > 0:
+                workspace_id = la_data["data"]["rows"][0][0]
+            else:
+                return json.dumps({"error": "No Log Analytics workspaces found"}, indent=2)
+                
+        except Exception as e:
+            return f"Error processing Log Analytics workspaces: {str(e)}"
+    
+    # Default query for performance data
+    if not query:
+        query = """
+        Perf
+        | where TimeGenerated > ago(24h)
+        | where CounterName in ("% Processor Time", "Available MBytes", "Disk Reads/sec", "Disk Writes/sec")
+        | summarize avg(CounterValue) by Computer, CounterName, bin(TimeGenerated, 1h)
+        | order by TimeGenerated desc
+        """
+    
+    endpoint = f"{workspace_id}/query"
+    
+    query_data = {
+        "query": query,
+        "timespan": timespan
+    }
+    
+    result = await make_azure_request("POST", endpoint, 
+                                             params={"api-version": "2020-08-01"}, 
+                                             data=query_data)
+    
+    if "error" in result and result["error"]:
+        return f"Error querying Log Analytics: {result.get('message', 'Unknown error')}"
+    
+    return json.dumps(result, indent=2)
+
+@mcp.tool()
+async def get_secure_score_and_compliance() -> str:
+    """
+    Get Microsoft Defender secure score and regulatory compliance summary.
+    """
+    secure_score_endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Security/secureScores"
+    compliance_endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Security/regulatoryComplianceStandards"
+    
+    # Get secure score
+    secure_score_result = await make_azure_request("GET", secure_score_endpoint, 
+                                                           params={"api-version": "2020-01-01"})
+    
+    # Get compliance standards
+    compliance_result = await make_azure_request("GET", compliance_endpoint, 
+                                                         params={"api-version": "2019-01-01-preview"})
+    
+    return json.dumps({
+        "secure_score": secure_score_result,
+        "regulatory_compliance": compliance_result
+    }, indent=2)
+
+@mcp.tool()
+async def get_security_incidents() -> str:
+    """
+    Get Azure Sentinel security incidents and their details.
+    """
+    # First find Sentinel workspaces
+    sentinel_query = """
+    Resources
+    | where type =~ 'Microsoft.OperationalInsights/workspaces'
+    | where properties.features.enableLogAccessUsingOnlyResourcePermissions == true
+    | project id, name, resourceGroup, location
+    """
+    
+    sentinel_result = await get_all_resources(sentinel_query)
+    
+    try:
+        sentinel_data = json.loads(sentinel_result)
+        
+        incidents_summary = {
+            "total_incidents": 0,
+            "workspaces": [],
+            "incidents_by_severity": {},
+            "recent_incidents": []
+        }
+        
+        if "data" in sentinel_data and "rows" in sentinel_data["data"]:
+            for workspace in sentinel_data["data"]["rows"]:
+                workspace_id = workspace[0]
+                workspace_name = workspace[1]
+                
+                # Get incidents for this workspace
+                incidents_endpoint = f"{workspace_id}/providers/Microsoft.SecurityInsights/incidents"
+                incidents_result = await make_azure_request("GET", incidents_endpoint, 
+                                                                   params={"api-version": "2021-10-01"})
+                
+                if not (isinstance(incidents_result, dict) and incidents_result.get("error")):
+                    incidents = incidents_result.get("value", [])
+                    
+                    workspace_info = {
+                        "workspace_name": workspace_name,
+                        "workspace_id": workspace_id,
+                        "incident_count": len(incidents),
+                        "incidents": incidents
+                    }
+                    
+                    incidents_summary["workspaces"].append(workspace_info)
+                    incidents_summary["total_incidents"] += len(incidents)
+                    
+                    # Categorize by severity
+                    for incident in incidents:
+                        severity = incident.get("properties", {}).get("severity", "Unknown")
+                        incidents_summary["incidents_by_severity"][severity] = incidents_summary["incidents_by_severity"].get(severity, 0) + 1
+        
+        return json.dumps(incidents_summary, indent=2)
+        
+    except Exception as e:
+        return f"Error retrieving security incidents: {str(e)}"
+
+@mcp.tool()
+async def get_threat_intelligence_indicators() -> str:
+    """
+    Get threat intelligence indicators from Azure Sentinel.
+    """
+    # Find Sentinel workspaces first
+    sentinel_query = """
+    Resources
+    | where type =~ 'Microsoft.OperationalInsights/workspaces'
+    | project id, name, resourceGroup, location
+    | limit 5
+    """
+    
+    sentinel_result = await get_all_resources(sentinel_query)
+    
+    try:
+        sentinel_data = json.loads(sentinel_result)
+        
+        threat_intel_summary = {
+            "total_indicators": 0,
+            "workspaces": [],
+            "indicators_by_type": {}
+        }
+        
+        if "data" in sentinel_data and "rows" in sentinel_data["data"]:
+            for workspace in sentinel_data["data"]["rows"]:
+                workspace_id = workspace[0]
+                workspace_name = workspace[1]
+                
+                # Get threat intelligence indicators
+                ti_endpoint = f"{workspace_id}/providers/Microsoft.SecurityInsights/threatIntelligence/main/indicators"
+                ti_result = await make_azure_request("GET", ti_endpoint, 
+                                                            params={"api-version": "2021-10-01"})
+                
+                if not (isinstance(ti_result, dict) and ti_result.get("error")):
+                    indicators = ti_result.get("value", [])
+                    
+                    workspace_info = {
+                        "workspace_name": workspace_name,
+                        "workspace_id": workspace_id,
+                        "indicators_count": len(indicators),
+                        "indicators": indicators[:10]  # Limit to first 10 for performance
+                    }
+                    
+                    threat_intel_summary["workspaces"].append(workspace_info)
+                    threat_intel_summary["total_indicators"] += len(indicators)
+        
+        return json.dumps(threat_intel_summary, indent=2)
+        
+    except Exception as e:
+        return f"Error retrieving threat intelligence indicators: {str(e)}"
+
+@mcp.tool()
+async def get_security_recommendations_detailed() -> str:
+    """
+    Get detailed security recommendations with remediation steps and impact assessment.
+    """
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Security/assessments"
+    
+    result = await make_azure_request("GET", endpoint, 
+                                             params={
+                                                 "api-version": "2020-01-01",
+                                                 "$expand": "links,metadata"
+                                             })
+    
+    if "error" in result and result["error"]:
+        return f"Error retrieving detailed security recommendations: {result.get('message', 'Unknown error')}"
+    
+    # Process recommendations to add remediation guidance
+    try:
+        if "value" in result:
+            processed_recommendations = []
+            
+            for recommendation in result["value"]:
+                props = recommendation.get("properties", {})
+                metadata = props.get("metadata", {})
+                
+                processed_rec = {
+                    "id": recommendation.get("id", ""),
+                    "name": recommendation.get("name", ""),
+                    "display_name": metadata.get("displayName", ""),
+                    "description": metadata.get("description", ""),
+                    "severity": metadata.get("severity", ""),
+                    "category": metadata.get("categories", []),
+                    "status": props.get("status", {}),
+                    "remediation_description": metadata.get("remediationDescription", ""),
+                    "implementation_effort": metadata.get("implementationEffort", ""),
+                    "user_impact": metadata.get("userImpact", ""),
+                    "threats": metadata.get("threats", []),
+                    "resource_details": props.get("resourceDetails", {}),
+                    "additional_data": props.get("additionalData", {})
+                }
+                
+                processed_recommendations.append(processed_rec)
+            
+            # Sort by severity and status
+            severity_order = {"High": 3, "Medium": 2, "Low": 1}
+            processed_recommendations.sort(
+                key=lambda x: (
+                    severity_order.get(x.get("severity", ""), 0),
+                    1 if x.get("status", {}).get("code") == "Unhealthy" else 0
+                ),
+                reverse=True
+            )
+            
+            summary = {
+                "total_recommendations": len(processed_recommendations),
+                "critical_recommendations": [r for r in processed_recommendations if r.get("severity") == "High" and r.get("status", {}).get("code") == "Unhealthy"],
+                "all_recommendations": processed_recommendations
+            }
+            
+            return json.dumps(summary, indent=2)
+            
+    except Exception as e:
+        return f"Error processing security recommendations: {str(e)}"
+    
+    return json.dumps(result, indent=2)
+
 # === RESOURCES ===
 
 @mcp.resource("https://azure-billing/subscription")
 async def get_subscription_resource() -> str:
     """Get details about the current subscription."""
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={"api-version": "2022-12-01"})
     
     if "error" in result and result["error"]:
@@ -1352,10 +1742,10 @@ async def get_subscription_resource() -> str:
     return json.dumps(result, indent=2)
 
 @mcp.resource("https://azure-billing/billing-summary")
-async def get_billing_summary_resource() -> str:
+async def get_azure_summary_resource() -> str:
     """Get a summary of current billing for the subscription."""
     # We'll use cost management API to get a quick summary
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.CostManagement/query"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.CostManagement/query"
     
     query_data = {
         "type": "ActualCost",
@@ -1371,7 +1761,7 @@ async def get_billing_summary_resource() -> str:
         }
     }
     
-    result = await make_azure_billing_request("POST", endpoint, 
+    result = await make_azure_request("POST", endpoint, 
                                              params={"api-version": "2023-03-01"}, 
                                              data=query_data)
     
@@ -1383,9 +1773,9 @@ async def get_billing_summary_resource() -> str:
 @mcp.resource("https://azure-billing/budgets")
 async def get_budgets_resource() -> str:
     """Get all budgets for the subscription."""
-    endpoint = f"/subscriptions/{AZURE_BILLING_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/budgets"
+    endpoint = f"/subscriptions/{AZURE_SUBSCRIPTION_ID}/providers/Microsoft.Consumption/budgets"
     
-    result = await make_azure_billing_request("GET", endpoint, 
+    result = await make_azure_request("GET", endpoint, 
                                              params={"api-version": "2023-04-01"})
     
     if "error" in result and result["error"]:
@@ -1462,6 +1852,51 @@ async def get_keyvault_security_resource() -> str:
 async def get_network_security_resource() -> str:
     """Get network security analysis including NSGs and firewalls."""
     return await get_network_security_analysis()
+
+@mcp.resource("https://azure-alerts/overview")
+async def get_alerts_overview_resource() -> str:
+    """Get active alerts overview across the subscription."""
+    return await get_alerts_overview()
+
+@mcp.resource("https://azure-alerts/rules")
+async def get_alert_rules_resource() -> str:
+    """Get metric alert rules and configurations."""
+    return await get_alert_rules()
+
+@mcp.resource("https://azure-performance/application-insights")
+async def get_application_insights_resource() -> str:
+    """Get Application Insights performance data."""
+    return await get_application_insights_data()
+
+@mcp.resource("https://azure-performance/resource-health")
+async def get_resource_health_resource() -> str:
+    """Get resource health status across the subscription."""
+    return await get_resource_health_status()
+
+@mcp.resource("https://azure-performance/log-analytics")
+async def get_log_analytics_resource() -> str:
+    """Get Log Analytics performance data."""
+    return await get_log_analytics_data()
+
+@mcp.resource("https://azure-security/secure-score")
+async def get_secure_score_resource() -> str:
+    """Get Microsoft Defender secure score and compliance."""
+    return await get_secure_score_and_compliance()
+
+@mcp.resource("https://azure-security/incidents")
+async def get_security_incidents_resource() -> str:
+    """Get Azure Sentinel security incidents."""
+    return await get_security_incidents()
+
+@mcp.resource("https://azure-security/threat-intelligence")
+async def get_threat_intelligence_resource() -> str:
+    """Get threat intelligence indicators."""
+    return await get_threat_intelligence_indicators()
+
+@mcp.resource("https://azure-security/recommendations-detailed")
+async def get_security_recommendations_detailed_resource() -> str:
+    """Get detailed security recommendations with remediation steps."""
+    return await get_security_recommendations_detailed()
 
 # === PROMPTS ===
 
@@ -1615,6 +2050,66 @@ def security_compliance_review_prompt(standard: str = None) -> str:
         return f"Please review my Azure security posture against '{standard}' compliance requirements. Analyze current assessments, identify compliance gaps, and provide a roadmap for achieving and maintaining '{standard}' compliance."
     else:
         return "Please review my Azure security compliance status across all applicable standards. Identify failed controls, compliance gaps, and provide prioritized recommendations for improving overall compliance posture."
+
+@mcp.prompt("alerts_analysis")
+def alerts_analysis_prompt(severity: str = None) -> str:
+    """
+    A prompt template for analyzing Azure alerts and their remediation.
+    
+    Args:
+        severity: Filter by alert severity (Critical, High, Medium, Low)
+    """
+    if severity:
+        return f"Please analyze my Azure alerts filtered by {severity} severity. Focus on active alerts, their root causes, and provide step-by-step remediation guidance. Include impact assessment and prevention strategies."
+    else:
+        return "Please analyze all my Azure alerts across the subscription. Categorize by severity and type, identify patterns, and provide comprehensive remediation guidance for critical issues. Include recommendations for alert optimization."
+
+@mcp.prompt("performance_troubleshooting")
+def performance_troubleshooting_prompt(resource_type: str = None) -> str:
+    """
+    A prompt template for performance troubleshooting using monitoring data.
+    
+    Args:
+        resource_type: Focus on specific resource type (vm, app-service, database, etc.)
+    """
+    if resource_type:
+        return f"Please troubleshoot performance issues in my Azure {resource_type} resources. Analyze metrics, logs, and health status to identify bottlenecks, resource constraints, and optimization opportunities. Provide specific remediation steps."
+    else:
+        return "Please perform comprehensive performance troubleshooting across my Azure environment. Analyze Application Insights, Log Analytics, and resource health data to identify performance issues, bottlenecks, and provide actionable remediation steps."
+
+@mcp.prompt("security_incident_response")
+def security_incident_response_prompt() -> str:
+    """
+    A prompt template for security incident response and remediation.
+    """
+    return "Please analyze my Azure security incidents and alerts. Prioritize by severity and impact, provide detailed incident response procedures, remediation steps, and preventive measures. Include threat intelligence context where available."
+
+@mcp.prompt("threat_hunting")
+def threat_hunting_prompt() -> str:
+    """
+    A prompt template for proactive threat hunting using Azure security data.
+    """
+    return "Please conduct proactive threat hunting across my Azure environment. Analyze security incidents, threat intelligence indicators, and security assessments to identify potential threats, IOCs, and attack patterns. Provide hunting queries and remediation strategies."
+
+@mcp.prompt("compliance_remediation")
+def compliance_remediation_prompt(standard: str = None) -> str:
+    """
+    A prompt template for compliance remediation based on security assessments.
+    
+    Args:
+        standard: Focus on specific compliance standard
+    """
+    if standard:
+        return f"Please analyze my Azure security posture for {standard} compliance. Review security assessments, identify compliance gaps, and provide detailed remediation roadmap with prioritized actions and timelines."
+    else:
+        return "Please analyze my Azure security compliance across all standards. Review secure score, regulatory compliance assessments, and provide comprehensive remediation plan to improve security posture and compliance ratings."
+
+@mcp.prompt("alert_optimization")
+def alert_optimization_prompt() -> str:
+    """
+    A prompt template for optimizing alert rules and reducing noise.
+    """
+    return "Please analyze my Azure alert rules and configurations. Identify noisy alerts, gaps in monitoring coverage, and opportunities for optimization. Provide recommendations for improving alert quality, reducing false positives, and ensuring critical issues are properly monitored."
 
 @mcp.tool("get_security_center_alerts")
 async def get_security_center_alerts() -> str:

@@ -8,6 +8,10 @@ Tests the following tools:
 - get_defender_for_cloud_status
 - get_key_vault_security_status
 - get_network_security_analysis
+- get_secure_score_and_compliance
+- get_security_incidents
+- get_threat_intelligence_indicators
+- get_security_recommendations_detailed
 """
 
 import asyncio
@@ -26,7 +30,11 @@ from mcp_azure_server.server import (
     get_security_assessments,
     get_defender_for_cloud_status,
     get_key_vault_security_status,
-    get_network_security_analysis
+    get_network_security_analysis,
+    get_secure_score_and_compliance,
+    get_security_incidents,
+    get_threat_intelligence_indicators,
+    get_security_recommendations_detailed
 )
 
 async def test_security_tools(export_data=False):
@@ -48,6 +56,10 @@ async def test_security_tools(export_data=False):
         ("get_defender_for_cloud_status", get_defender_for_cloud_status, {}),
         ("get_key_vault_security_status", get_key_vault_security_status, {}),
         ("get_network_security_analysis", get_network_security_analysis, {}),
+        ("get_secure_score_and_compliance", get_secure_score_and_compliance, {}),
+        ("get_security_incidents", get_security_incidents, {}),
+        ("get_threat_intelligence_indicators", get_threat_intelligence_indicators, {}),
+        ("get_security_recommendations_detailed", get_security_recommendations_detailed, {}),
     ]
     
     results = {}

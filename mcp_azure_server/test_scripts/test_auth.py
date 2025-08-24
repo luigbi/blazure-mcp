@@ -15,10 +15,10 @@ async def test_authentication():
     
     # Check if environment variables are set
     required_vars = [
-        "AZURE_BILLING_TENANT_ID",
-        "AZURE_BILLING_CLIENT_ID", 
-        "AZURE_BILLING_CLIENT_SECRET",
-        "AZURE_BILLING_SUBSCRIPTION_ID"
+        "AZURE_TENANT_ID",
+        "AZURE_CLIENT_ID", 
+        "AZURE_CLIENT_SECRET",
+        "AZURE_SUBSCRIPTION_ID"
     ]
     
     missing_vars = [var for var in required_vars if not os.environ.get(var)]

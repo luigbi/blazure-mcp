@@ -10,6 +10,7 @@ Test Suites:
 - Resource Discovery Tools  
 - Performance Monitoring Tools
 - Security Monitoring Tools
+- Alerts & Monitoring Tools
 - Detailed Resource Information Tools
 """
 
@@ -83,11 +84,12 @@ def main():
     
     # Define test files in order of execution
     test_files = [
-        "test_billing_tools.py",
+        "test_tools.py",
         "test_resource_discovery.py", 
         "test_detailed_resources.py",
         "test_performance_tools.py",
         "test_security_tools.py",
+        "test_alerts_monitoring.py",
         "test_additional_tools.py"
     ]
     

@@ -75,32 +75,32 @@ az role assignment create --assignee {CLIENT_ID} --role "Monitoring Reader" --sc
 # This outputs your credentials. Set them as environment variables.
 
   ## Windows (Command Prompt):
-  set AZURE_BILLING_TENANT_ID=your_tenant_id
-  set AZURE_BILLING_CLIENT_ID=your_client_id
-  set AZURE_BILLING_CLIENT_SECRET=your_client_secret
-  set AZURE_BILLING_SUBSCRIPTION_ID=your_subscription_id
+  set AZURE_TENANT_ID=your_tenant_id
+  set AZURE_CLIENT_ID=your_client_id
+  set AZURE_CLIENT_SECRET=your_client_secret
+  set AZURE_SUBSCRIPTION_ID=your_subscription_id
 
   ## Windows (PowerShell):
-  $env:AZURE_BILLING_TENANT_ID="your_tenant_id"
-  $env:AZURE_BILLING_CLIENT_ID="your_client_id"
-  $env:AZURE_BILLING_CLIENT_SECRET="your_client_secret"
-  $env:AZURE_BILLING_SUBSCRIPTION_ID="your_subscription_id"
+  $env:AZURE_TENANT_ID="your_tenant_id"
+  $env:AZURE_CLIENT_ID="your_client_id"
+  $env:AZURE_CLIENT_SECRET="your_client_secret"
+  $env:AZURE_SUBSCRIPTION_ID="your_subscription_id"
 
   ## Linux/Mac:
-  export AZURE_BILLING_TENANT_ID="your_tenant_id"
-  export AZURE_BILLING_CLIENT_ID="your_client_id"
-  export AZURE_BILLING_CLIENT_SECRET="your_client_secret"
-  export AZURE_BILLING_SUBSCRIPTION_ID="your_subscription_id"
+  export AZURE_TENANT_ID="your_tenant_id"
+  export AZURE_CLIENT_ID="your_client_id"
+  export AZURE_CLIENT_SECRET="your_client_secret"
+  export AZURE_SUBSCRIPTION_ID="your_subscription_id"
 
 ### 2. Set Environment Variables
 
 Create a `.env` file or set these environment variables:
 
 ```bash
-export AZURE_BILLING_TENANT_ID="your_tenant_id"
-export AZURE_BILLING_CLIENT_ID="your_client_id"
-export AZURE_BILLING_CLIENT_SECRET="your_client_secret"
-export AZURE_BILLING_SUBSCRIPTION_ID="your_subscription_id"
+export AZURE_TENANT_ID="your_tenant_id"
+export AZURE_CLIENT_ID="your_client_id"
+export AZURE_CLIENT_SECRET="your_client_secret"
+export AZURE_SUBSCRIPTION_ID="your_subscription_id"
 ```
 
 ### 3. Update Configuration
@@ -108,10 +108,10 @@ export AZURE_BILLING_SUBSCRIPTION_ID="your_subscription_id"
 Edit the `server.py` file to use your credentials:
 
 ```python
-AZURE_BILLING_TENANT_ID = "your_tenant_id"
-AZURE_BILLING_CLIENT_ID = "your_client_id"
-AZURE_BILLING_CLIENT_SECRET = "your_client_secret"
-AZURE_BILLING_SUBSCRIPTION_ID = "your_subscription_id"
+AZURE_TENANT_ID = "your_tenant_id"
+AZURE_CLIENT_ID = "your_client_id"
+AZURE_CLIENT_SECRET = "your_client_secret"
+AZURE_SUBSCRIPTION_ID = "your_subscription_id"
 ```
 
 ## Usage
@@ -133,10 +133,10 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
       "args": ["-m", "mcp_azure_server.server"],
       "cwd": "/path/to/mcp_azure_server",
       "env": {
-        "AZURE_BILLING_TENANT_ID": "your_tenant_id",
-        "AZURE_BILLING_CLIENT_ID": "your_client_id",
-        "AZURE_BILLING_CLIENT_SECRET": "your_client_secret",
-        "AZURE_BILLING_SUBSCRIPTION_ID": "your_subscription_id"
+        "AZURE_TENANT_ID": "your_tenant_id",
+        "AZURE_CLIENT_ID": "your_client_id",
+        "AZURE_CLIENT_SECRET": "your_client_secret",
+        "AZURE_SUBSCRIPTION_ID": "your_subscription_id"
       }
     }
   }

@@ -7,7 +7,7 @@ from pathlib import Path
 parent_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(parent_dir))
 
-from mcp_azure_server.server import get_recommendations, get_subscription_details, get_cost_analysis, get_budgets, get_usage_details, get_price_sheet, get_billing_summary_resource
+from mcp_azure_server.server import get_recommendations, get_subscription_details, get_cost_analysis, get_budgets, get_usage_details, get_price_sheet, get_summary_resource
 
 # Create export directory
 EXPORT_DIR = os.path.join(os.path.dirname(__file__), "export")
@@ -23,9 +23,9 @@ async def main():
 
 
 	print("Get a summary of current billing for the subscription.")
-	summary_resource = await get_billing_summary_resource()
+	summary_resource = await get_summary_resource()
 	print(summary_resource)
-	export_result("get_billing_summary_resource.txt", summary_resource)
+	export_result("get_summary_resource.txt", summary_resource)
 
 	print("_______________________________________________________________________")
 	print("Subscription details:")
